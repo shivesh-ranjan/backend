@@ -1,0 +1,9 @@
+services:
+  db:
+    image: postgres:17.2
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: S&Shivesh72
+      POSTGRES_DB: blogDB
+    ports:
+      - 5432:5432
