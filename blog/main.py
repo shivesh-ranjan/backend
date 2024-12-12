@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
 
-DATABASE_URL = "postgresql://postgres:S&Shivesh72@localhost/blogDB"
+DATABASE_URL = "postgresql://postgres:example@localhost/blogDB"
 
 # SQLAlchemy setup
 Base = declarative_base()
