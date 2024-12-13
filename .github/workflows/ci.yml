@@ -14,13 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
       - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
           python-version: "3.12"
       - name: Install dependencies
         run: |
+          cd blog
           python -m pip install -r requirements.txt
           python -m pip install pytest
       - name: Run tests
