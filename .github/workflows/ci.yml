@@ -26,4 +26,5 @@ jobs:
           python -m pip install pytest
       - name: Run tests
         run: |
+          cd blog
           python -m pytest
