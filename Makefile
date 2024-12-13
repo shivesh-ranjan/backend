@@ -1,6 +1,14 @@
+.PHONY: venv install test workflow
+
+venv:
+	virtualenv venv
+
 install:
-	python -m pip install -r blog/requirements.txt
-install-pytest:
-	python -m pip install pytest
+	venv/bin/pip install -r blog/requirements.txt && venv/bin/pip install pytest
+
 test:
-	python -m pytest blog/test.py
+	venv/bin/python -m pytest blog/test.py
+
+workflow: venv install test
+cleanup:
+	rm -rf venv && rm test.db

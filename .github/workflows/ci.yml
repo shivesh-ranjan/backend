@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,12 +19,6 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: "3.12"
-      - name: Install dependencies
+      - name: Install dependencies and Run Tests
         run: |
-          cd blog
-          python -m pip install -r requirements.txt
-          python -m pip install pytest
-      - name: Run tests
-        run: |
-          cd blog
-          python -m pytest test.py
+          make workflow
