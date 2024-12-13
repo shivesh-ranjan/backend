@@ -23,11 +23,9 @@ jobs:
       #
       - name: Install dependencies
         run: |
-          cd blog
-          python -m pip install -r requirements.txt
-          pip install pytest
-      
+          make install
+          make install-pytest
+
       - name: Run tests
         run: |
-          cd blog
-          python -m pytest test.py
+          make test
