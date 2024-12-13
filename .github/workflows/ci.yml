@@ -1,6 +1,10 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
@@ -24,5 +28,5 @@ jobs:
       
       - name: Run tests
         run: |
-          cd src
-          python -m pytest blog/test.py
+          cd blog
+          python -m pytest test.py
