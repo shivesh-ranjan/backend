@@ -1,11 +1,31 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from datetime import datetime
+from datetime import datetime, timezone
+from sqlalchemy.exc import OperationalError
+import time
+import os
 
-DATABASE_URL = "postgresql://postgres:example@localhost/blogDB"
+DATABASE_URL = os.getenv(key="DATABASE_URL", default="sqlite:///./test.db")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # before yield is before startup
+    while True:
+        try:
+            engine = create_engine(DATABASE_URL)
+            with engine.connect() as connection:
+                print("Database is ready!")
+                break
+        except OperationalError:
+            print("Database is not ready yet. Retrying in 5 seconds...")
+            time.sleep(5)
+    yield
+    # after yield is code to cleanup or do something after fastapi is closed
+    print("Cleanup or something...")
 
 # SQLAlchemy setup
 Base = declarative_base()
@@ -27,8 +47,8 @@ class Post(Base):
     username = Column(String, nullable=False)
     title = Column(String, nullable=False)
     body = Column(Text, nullable=False)
-    date_posted = Column(DateTime, default=datetime.utcnow)
-    date_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    date_posted = Column(DateTime, default=datetime.now(timezone.utc))
+    date_updated = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
 
 class Comment(Base):
@@ -38,7 +58,7 @@ class Comment(Base):
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
     username = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    date_posted = Column(DateTime, default=datetime.utcnow)
+    date_posted = Column(DateTime, default=datetime.now(timezone.utc))
     is_edited = Column(Boolean, default=False)
     
 # API Schemas

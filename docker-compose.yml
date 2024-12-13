@@ -5,5 +5,14 @@ services:
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: blogDB
+
+  blog:
+    build: ./blog/.
     ports:
-      - 5432:5432
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://postgres:example@db/blogDB"
+    entrypoint: ["/app/wait-for.sh", "db:5432", "--", "/app/start.sh"]
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
