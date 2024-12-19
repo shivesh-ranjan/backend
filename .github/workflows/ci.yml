@@ -56,7 +56,11 @@ jobs:
           which migrate
 
       - name: Run Migrations
-        run: make migrateup
+        run: |
+          cd auth
+          make migrateup
 
       - name: Test
-        run: make test
+        run: |
+          cd auth
+          make test
