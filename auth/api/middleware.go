@@ -3,8 +3,10 @@ package api
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	db "shivesh-ranjan.github.io/m/db/sqlc"
@@ -62,4 +64,42 @@ func (server *Server) getUserFromPayload(ctx *gin.Context) (db.User, error) {
 		return user, errors.New("User doesn't exist for this session. That's weird.")
 	}
 	return user, nil
+}
+
+// Reverse Proxy logic
+func proxyRequest(c *gin.Context, targetURL string) {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// Creating a new HTTP request based on the incoming Gin request
+	req, err := http.NewRequest(c.Request.Method, targetURL+c.Request.URL.Path, c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// copying headers from the original request
+	for k, v := range c.Request.Header {
+		req.Header[k] = v
+	}
+
+	// To add authenticated user info if required
+	if username, exists := c.Get("username"); exists {
+		req.Header.Set("X-User-Name", username.(string))
+	}
+
+	// Performing the request
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, errorResponse(err))
+		return
+	}
+
+	// Copying the response back to the client
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), body)
 }

@@ -39,12 +39,26 @@ func (server *Server) setupRouter() {
 	router.POST("/login", server.loginUser)
 	router.GET("/", server.getUser)
 
+	// ======================================================
+	router.GET("/blog/*proxyPath", func(ctx *gin.Context) {
+		targetURL := server.config.BlogMicroURL
+		proxyRequest(ctx, targetURL)
+	})
+	// ======================================================
+
 	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 	authRoutes.POST("/role", server.CreateRole)
 	authRoutes.DELETE("/role", server.DeleteRole)
 	authRoutes.PUT("/", server.UpdateUser)
 	authRoutes.PUT("/role", server.UpdateRole)
 	authRoutes.PUT("/login", server.UpdatePassword)
+
+	// ======================================================
+	authRoutes.Any("/blog/*proxyPath", func(ctx *gin.Context) {
+		targetURL := server.config.BlogMicroURL
+		proxyRequest(ctx, targetURL)
+	})
+	// ======================================================
 
 	server.router = router
 }
