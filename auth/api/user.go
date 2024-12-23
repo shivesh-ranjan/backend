@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,7 +19,6 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=5"`
 	About    string `json:"about" binding:"required"`
 	Photo    string `json:"photo" binding:"required"`
-	Role     string `json:"role" binding:"required"`
 }
 
 type UserResponse struct {
@@ -42,16 +42,20 @@ func (server *Server) createUser(ctx *gin.Context) {
 	arg := db.CreateUserParams{
 		Name:     req.Name,
 		Username: req.Username,
-		Role:     req.Role,
+		Role:     "user",
 		About:    req.About,
 		Password: hashedPassword,
+		Photo:    req.Photo,
 	}
 	result, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
-			case "foreign_key_violation", "unique_violation":
+			case "foreign_key_violation":
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			case "unique_violation":
+				ctx.JSON(http.StatusForbidden, errorResponse(errors.New("username already taken.")))
 				return
 			}
 		}
@@ -115,10 +119,14 @@ func (server *Server) UpdatePassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
+	if user.Username != req.Username || user.Role != "admin" {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("You can only update your password.")))
+		return
+	}
 	arg := db.UpdatePasswordParams{
 		Username: req.Username,
-		Password: req.Password,
 	}
+	arg.Password, _ = utils.HashPassword(req.Password)
 	user, err = server.store.UpdatePassword(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -150,6 +158,9 @@ func (server *Server) UpdateRole(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
+	}
+	if user.Role != "admin" {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("Only admins can update Role.")))
 	}
 	arg := db.UpdateRoleParams{
 		Username: req.Username,

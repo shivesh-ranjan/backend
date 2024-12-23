@@ -14,6 +14,7 @@ type Config struct {
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	BlogMicroURL        string        `mapstructure:"BLOG_MICRO_URL"`
+	AdminPassword       string        `mapstructure:"ADMIN_PASSWORD"`
 }
 
 // LoadConfig reads configuration file or environment variables.

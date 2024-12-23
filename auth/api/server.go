@@ -54,7 +54,15 @@ func (server *Server) setupRouter() {
 	authRoutes.PUT("/login", server.UpdatePassword)
 
 	// ======================================================
-	authRoutes.Any("/blog/*proxyPath", func(ctx *gin.Context) {
+	authRoutes.POST("/blog/*proxyPath", func(ctx *gin.Context) {
+		targetURL := server.config.BlogMicroURL
+		proxyRequest(ctx, targetURL)
+	})
+	authRoutes.PUT("/blog/*proxyPath", func(ctx *gin.Context) {
+		targetURL := server.config.BlogMicroURL
+		proxyRequest(ctx, targetURL)
+	})
+	authRoutes.DELETE("/blog/*proxyPath", func(ctx *gin.Context) {
 		targetURL := server.config.BlogMicroURL
 		proxyRequest(ctx, targetURL)
 	})
