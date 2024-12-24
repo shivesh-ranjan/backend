@@ -67,11 +67,11 @@ func (server *Server) getUserFromPayload(ctx *gin.Context) (db.User, error) {
 }
 
 // Reverse Proxy logic
-func proxyRequest(c *gin.Context, targetURL string) {
+func proxyRequest(c *gin.Context, targetURL string, username string) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	// Creating a new HTTP request based on the incoming Gin request
-	req, err := http.NewRequest(c.Request.Method, targetURL+c.Request.URL.Path, c.Request.Body)
+	req, err := http.NewRequest(c.Request.Method, targetURL+c.Param("proxyPath"), c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -83,8 +83,8 @@ func proxyRequest(c *gin.Context, targetURL string) {
 	}
 
 	// To add authenticated user info if required
-	if username, exists := c.Get("username"); exists {
-		req.Header.Set("X-User-Name", username.(string))
+	if username != "" {
+		req.Header.Set("X-Username", username)
 	}
 
 	// Performing the request

@@ -34,10 +34,12 @@ func (server *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
 	}
 	hashedPassword, perror := utils.HashPassword(req.Password)
 	if perror != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("There was a problem while parsing the password")))
+		return
 	}
 	arg := db.CreateUserParams{
 		Name:     req.Name,
@@ -104,7 +106,6 @@ func (server *Server) getUser(ctx *gin.Context) {
 }
 
 type updatePasswordRequest struct {
-	Username string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -119,12 +120,8 @@ func (server *Server) UpdatePassword(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
 		return
 	}
-	if user.Username != req.Username || user.Role != "admin" {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("You can only update your password.")))
-		return
-	}
 	arg := db.UpdatePasswordParams{
-		Username: req.Username,
+		Username: user.Username,
 	}
 	arg.Password, _ = utils.HashPassword(req.Password)
 	user, err = server.store.UpdatePassword(ctx, arg)
@@ -161,6 +158,7 @@ func (server *Server) UpdateRole(ctx *gin.Context) {
 	}
 	if user.Role != "admin" {
 		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("Only admins can update Role.")))
+		return
 	}
 	arg := db.UpdateRoleParams{
 		Username: req.Username,
@@ -183,10 +181,9 @@ func (server *Server) UpdateRole(ctx *gin.Context) {
 }
 
 type updateUserRequest struct {
-	Username string `json:"username" binding:"required"`
-	Name     string `json:"name" binding:"required"`
-	About    string `json:"about" binding:"required"`
-	Photo    string `json:"photo" binding:"required"`
+	Name  string `json:"name" binding:"required"`
+	About string `json:"about" binding:"required"`
+	Photo string `json:"photo" binding:"required"`
 }
 
 func (server *Server) UpdateUser(ctx *gin.Context) {
@@ -201,7 +198,7 @@ func (server *Server) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	arg := db.UpdateUserParams{
-		Username: req.Username,
+		Username: user.Username,
 		Name:     req.Name,
 		About:    req.About,
 		Photo:    req.Photo,

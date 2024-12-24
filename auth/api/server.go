@@ -42,7 +42,7 @@ func (server *Server) setupRouter() {
 	// ======================================================
 	router.GET("/blog/*proxyPath", func(ctx *gin.Context) {
 		targetURL := server.config.BlogMicroURL
-		proxyRequest(ctx, targetURL)
+		proxyRequest(ctx, targetURL, "")
 	})
 	// ======================================================
 
@@ -56,15 +56,18 @@ func (server *Server) setupRouter() {
 	// ======================================================
 	authRoutes.POST("/blog/*proxyPath", func(ctx *gin.Context) {
 		targetURL := server.config.BlogMicroURL
-		proxyRequest(ctx, targetURL)
+		user, _ := server.getUserFromPayload(ctx)
+		proxyRequest(ctx, targetURL, user.Username)
 	})
 	authRoutes.PUT("/blog/*proxyPath", func(ctx *gin.Context) {
 		targetURL := server.config.BlogMicroURL
-		proxyRequest(ctx, targetURL)
+		user, _ := server.getUserFromPayload(ctx)
+		proxyRequest(ctx, targetURL, user.Username)
 	})
 	authRoutes.DELETE("/blog/*proxyPath", func(ctx *gin.Context) {
 		targetURL := server.config.BlogMicroURL
-		proxyRequest(ctx, targetURL)
+		user, _ := server.getUserFromPayload(ctx)
+		proxyRequest(ctx, targetURL, user.Username)
 	})
 	// ======================================================
 

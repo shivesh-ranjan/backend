@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, select
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import session, sessionmaker, Session
 from datetime import datetime, timezone
 from sqlalchemy.exc import OperationalError
 import time
@@ -63,7 +63,7 @@ class Comment(Base):
     
 # API Schemas
 class PostCreate(BaseModel):
-    username: str
+    # username: str
     title: str
     body: str
 
@@ -79,7 +79,7 @@ class PostResponse(BaseModel):
         orm_mode = True
 
 class CommentCreate(BaseModel):
-    username: str
+    # username: str
     content: str
 
 class CommentResponse(BaseModel):
@@ -100,8 +100,12 @@ app = FastAPI()
 
 # Routes
 @app.post("/posts/", response_model=PostResponse)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
-    db_post = Post(username=post.username, title=post.title, body=post.body)
+def create_post(request: Request, post: PostCreate, db: Session = Depends(get_db)):
+    db_post = Post(
+        username=request.headers.get("X-Username", None), 
+        title=post.title, 
+        body=post.body
+    )
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -115,11 +119,15 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     return db_post
 
 @app.post("/comments/{post_id}", response_model=CommentResponse)
-def create_comment(post_id: int, comment: CommentCreate, db: Session = Depends(get_db)):
+def create_comment(request: Request, post_id: int, comment: CommentCreate, db: Session = Depends(get_db)):
     db_post = db.query(Post).filter(Post.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
-    db_comment = Comment(post_id=post_id, username=comment.username, content=comment.content)
+    db_comment = Comment(
+        post_id=post_id, 
+        username=request.headers.get("X-Username", None), 
+        content=comment.content
+    )
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
@@ -134,11 +142,13 @@ def get_comments(post_id: int, db: Session = Depends(get_db)):
     return comments
 
 @app.put("/posts/{post_id}", response_model=PostResponse)
-def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db)):
+def update_post(request: Request, post_id: int, post: PostCreate, db: Session = Depends(get_db)):
     db_post = db.query(Post).filter(Post.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
-    db_post.username = post.username
+    username = request.headers.get("X-Username")
+    if username != db_post.username:
+        raise HTTPException(status_code=401, detail="Can't edit posts of others")
     db_post.title = post.title
     db_post.body = post.body
     db.commit()
@@ -146,20 +156,25 @@ def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db)):
     return db_post
 
 @app.delete("/posts/{post_id}", status_code=204)
-def delete_post(post_id: int, db: Session = Depends(get_db)):
+def delete_post(request: Request, post_id: int, db: Session = Depends(get_db)):
     db_post = db.query(Post).filter(Post.id == post_id).first()
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
+    username = request.headers.get("X-Username")
+    if username != db_post.username:
+        raise HTTPException(status_code=401, detail="Can't delete posts of others")
     db.delete(db_post)
     db.commit()
     return None
 
 @app.put("/comments/{comment_id}", response_model=CommentResponse)
-def update_comment(comment_id: int, comment: CommentCreate, db: Session = Depends(get_db)):
+def update_comment(request: Request, comment_id: int, comment: CommentCreate, db: Session = Depends(get_db)):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    db_comment.username = comment.username
+    username = request.headers.get("X-Username")
+    if username != db_comment.username:
+        raise HTTPException(status_code=401, detail="Unauthorized for this action")
     db_comment.content = comment.content
     db_comment.is_edited = True
     db.commit()
@@ -167,10 +182,13 @@ def update_comment(comment_id: int, comment: CommentCreate, db: Session = Depend
     return db_comment
 
 @app.delete("/comments/{comment_id}", status_code=204)
-def delete_comment(comment_id: int, db: Session = Depends(get_db)):
+def delete_comment(request: Request, comment_id: int, db: Session = Depends(get_db)):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:
         raise HTTPException(status_code=404, detail="Comment not found")
+    username = request.headers.get("X-Username")
+    if username != db_comment.username:
+        raise HTTPException(status_code=401, detail="Can't delete comments of others")
     db.delete(db_comment)
     db.commit()
     return None

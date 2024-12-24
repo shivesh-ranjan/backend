@@ -6,5 +6,5 @@ INSERT INTO "roles" (
 INSERT INTO "roles" (
 	role
 ) VALUES (
-	'users'
+	'user'
 );
