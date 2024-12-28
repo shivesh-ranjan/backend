@@ -9,8 +9,8 @@ from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 # Configuration
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
-RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "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")
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@172.17.0.2:5672/")
 
 # Initialize Tavily Client
 tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
@@ -50,7 +50,7 @@ async def summarize_articles(articles):
     return links, summary
 
 async def send_to_rabbitmq(links, summary, email):
-    """Send summaries and links to RabbitMQ."""
+    """Send summaries and links to the 'llm_comms' RabbitMQ exchange."""
     try:
         message = {
             "email": email,
@@ -60,7 +60,8 @@ async def send_to_rabbitmq(links, summary, email):
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
             channel = await connection.channel()
-            await channel.default_exchange.publish(
+            exchange = await channel.declare_exchange("llm_comms", aio_pika.ExchangeType.TOPIC)
+            await exchange.publish(
                 aio_pika.Message(body=json.dumps(message).encode()),
                 routing_key="llm.request"
             )
