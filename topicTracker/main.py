@@ -60,10 +60,10 @@ async def send_to_rabbitmq(links, summary, email):
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         async with connection:
             channel = await connection.channel()
-            exchange = await channel.declare_exchange("llm_comms", aio_pika.ExchangeType.TOPIC)
+            exchange = await channel.declare_exchange("llm_comms", aio_pika.ExchangeType.TOPIC, durable=True)
             await exchange.publish(
                 aio_pika.Message(body=json.dumps(message).encode()),
-                routing_key="llm.request"
+                routing_key="summary.email"
             )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error sending message to RabbitMQ: {str(e)}")
