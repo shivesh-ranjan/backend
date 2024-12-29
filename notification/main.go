@@ -6,25 +6,22 @@ import (
 	"log"
 	"net/smtp"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 )
 
-// RabbitMQ configuration
 var (
-	rabbitMQHost = os.Getenv("AMQP_URL")
-	exchangeName = os.Getenv("EXCHANGE_NAME")
-	routingKey   = os.Getenv("ROUTING_KEY")
-	queueName    = os.Getenv("QUEUE_NAME")
-)
-
-// Email configuration
-var (
-	smtpServer    = os.Getenv("SMTP_HOST")
-	smtpPort      = os.Getenv("SMTP_PORT")
-	emailUser     = os.Getenv("FROM_EMAIL")
-	emailPassword = os.Getenv("EMAIL_PASSWORD")
+	rabbitMQHost  string
+	exchangeName  string
+	routingKey    string
+	queueName     string
+	smtpServer    string
+	smtpPort      string
+	emailUser     string
+	emailPassword string
 )
 
 // Message represents the structure of RabbitMQ message
@@ -34,25 +31,46 @@ type Message struct {
 	Summary string   `json:"summary"`
 }
 
-// sendEmail sends an email with the given summary and links to the recipient.
+func loadEnvVars() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("No .env file found. Continuing with system environment variables.")
+	}
+
+	rabbitMQHost = getEnv("AMQP_URL")
+	exchangeName = getEnv("EXCHANGE_NAME")
+	routingKey = getEnv("ROUTING_KEY")
+	queueName = getEnv("QUEUE_NAME")
+	smtpServer = getEnv("SMTP_HOST")
+	smtpPort = getEnv("SMTP_PORT")
+	emailUser = getEnv("FROM_EMAIL")
+	emailPassword = getEnv("EMAIL_PASSWORD")
+}
+
+func getEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("Environment variable %s is not set", key)
+	}
+	return value
+}
+
 func sendEmail(toEmail string, summary string, links []string) {
-	// Create the email body
+	log.Print("Recieved email for sending...")
 	body := fmt.Sprintf(
 		"Hello,\n\nHere is your summary:\n\n%s\n\nLinks:\n%s\n\nBest regards.",
 		summary,
 		formatLinks(links),
 	)
 
-	// Set up authentication
+	log.Print("Doing plain auth for smtp...")
 	auth := smtp.PlainAuth("", emailUser, emailPassword, smtpServer)
-
-	// Create the email headers and body
 	msg := []byte(fmt.Sprintf(
-		"Subject: Summary and Links\n\n%s",
-		body,
+		"From: %s\nTo: %s\nSubject: Summary and Links\nContent-Type: text/plain; charset=\"utf-8\"\n\n%s",
+		emailUser, toEmail, body,
 	))
 
-	// Send the email
+	log.Print("Sending mail to cleint...")
 	err := smtp.SendMail(fmt.Sprintf("%s:%s", smtpServer, smtpPort), auth, emailUser, []string{toEmail}, msg)
 	if err != nil {
 		log.Printf("Failed to send email to %s: %v", toEmail, err)
@@ -61,7 +79,6 @@ func sendEmail(toEmail string, summary string, links []string) {
 	}
 }
 
-// formatLinks formats the list of links as a string with each link on a new line
 func formatLinks(links []string) string {
 	formatted := ""
 	for _, link := range links {
@@ -70,36 +87,37 @@ func formatLinks(links []string) string {
 	return formatted
 }
 
-// handleMessage processes messages from RabbitMQ
 func handleMessage(d amqp.Delivery) {
+	log.Printf("Received a message: %s", string(d.Body))
+
 	var msg Message
 	err := json.Unmarshal(d.Body, &msg)
 	if err != nil {
 		log.Printf("Failed to decode message: %v", err)
+		d.Nack(false, false) // Reject the message without requeueing
 		return
 	}
 
+	log.Printf("Processing email: %s", msg.Email)
 	if msg.Email == "" || msg.Summary == "" || len(msg.Links) == 0 {
-		log.Printf("Invalid message format: Missing email, summary, or links")
+		log.Printf("Invalid message: Missing email, summary, or links")
+		d.Nack(false, false)
 		return
 	}
 
 	sendEmail(msg.Email, msg.Summary, msg.Links)
 
-	// Acknowledge the message
-	d.Ack(false)
+	err = d.Ack(false)
+	if err != nil {
+		log.Printf("Failed to acknowledge message: %v", err)
+	}
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Failed to load env vars: %v", err)
-	}
+	loadEnvVars()
 
-	// Connect to RabbitMQ
 	conn, err := amqp.Dial(rabbitMQHost)
 	if err != nil {
-		log.Print(rabbitMQHost)
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}
 	defer conn.Close()
@@ -110,8 +128,7 @@ func main() {
 	}
 	defer ch.Close()
 
-	// Declare exchange and queue
-	err = ch.ExchangeDeclare(exchangeName, "direct", true, false, false, false, nil)
+	err = ch.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil)
 	if err != nil {
 		log.Fatalf("Failed to declare exchange: %v", err)
 	}
@@ -126,7 +143,6 @@ func main() {
 		log.Fatalf("Failed to bind queue: %v", err)
 	}
 
-	// Set up consumer
 	msgs, err := ch.Consume(queueName, "", false, false, false, false, nil)
 	if err != nil {
 		log.Fatalf("Failed to register a consumer: %v", err)
@@ -134,8 +150,15 @@ func main() {
 
 	log.Printf("Waiting for messages in queue '%s'...", queueName)
 
-	// Consume messages
-	for msg := range msgs {
-		handleMessage(msg)
-	}
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		for msg := range msgs {
+			go handleMessage(msg)
+		}
+	}()
+
+	<-stop
+	log.Println("Shutting down gracefully...")
 }
