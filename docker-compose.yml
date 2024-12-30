@@ -1,23 +1,45 @@
 services:
-  db:
+  db_blog:
     image: postgres:17.2
     restart: always
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_DB: blogDB
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - blog_data:/var/lib/postgresql/data
+
+  db_auth:
+    image: postgres:17.2
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: authDB
+    volumes:
+      - auth_data:/var/lib/postgresql/data
 
   blog:
-    image: derekshaw/blogmicro:1.0
-    ports:
-      - "8000:8000"
+    image: derekshaw/blogmicro:1.1
     depends_on:
-      - db
+      - db_blog
     environment:
-      DATABASE_URL: "postgresql://postgres:example@db/blogDB"
-    entrypoint: ["/app/wait-for.sh", "db:5432", "--", "/app/start.sh"]
+      DATABASE_URL: "postgresql://postgres:example@db_blog/blogDB"
+    entrypoint: ["/app/wait-for.sh", "db_blog:5432", "--", "/app/start.sh"]
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+  
+  auth:
+    image: derekshaw/gatewaymicro:1.0
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db_auth
+    environment:
+      DB_SOURCE: "postgresql://postgres:example@db_auth/authDB?sslmode=disable"
+      BLOG_MICRO_URL: "http://blog:8000"
+      GIN_MODE: "release"
+    entrypoint: ["/app/wait-for.sh", "db_auth:5432", "--", "/app/start.sh"]
+    command: ["/app/main"]
+
 
 volumes:
-  db_data:
+  blog_data:
+  auth_data:
