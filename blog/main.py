@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import List
 from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, select
@@ -110,6 +111,13 @@ def create_post(request: Request, post: PostCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(db_post)
     return db_post
+
+@app.get("/posts/{username}", response_model=List[PostResponse])
+def get_posts(username: str, db: Session = Depends(get_db)):
+    posts = db.query(Post).filter(Post.username==username).order_by(Post.date_posted.desc()).all()
+    if not posts:
+        raise HTTPException(status_code=404, detail="No posts found for this user")
+    return posts
 
 @app.get("/posts/{post_id}", response_model=PostResponse)
 def get_post(post_id: int, db: Session = Depends(get_db)):
