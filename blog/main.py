@@ -112,7 +112,7 @@ def create_post(request: Request, post: PostCreate, db: Session = Depends(get_db
     db.refresh(db_post)
     return db_post
 
-@app.get("/posts/{username}", response_model=List[PostResponse])
+@app.get("/posts/user/{username}", response_model=List[PostResponse])
 def get_posts(username: str, db: Session = Depends(get_db)):
     posts = db.query(Post).filter(Post.username==username).order_by(Post.date_posted.desc()).all()
     if not posts:
