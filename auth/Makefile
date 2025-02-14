@@ -11,7 +11,7 @@ dropdb:
 	docker exec -it authDB dropdb auth
 
 migrateup:
-	migrate -path db/migration -database "postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable" -verbose up
+	migrate -path db/migration -database "postgresql://postgres:secret@localhost:5432/auth?sslmode=disable" -verbose up
 
 migratedown:
 	migrate -path db/migration -database "postgresql://postgres:secret@localhost:5432/auth?sslmode=disable" -verbose down

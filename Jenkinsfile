@@ -12,8 +12,8 @@ pipeline {
 	    steps {
 	        sh '''
 		    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.12.2/migrate.linux-amd64.tar.gz | tar xvz
-		    mv migrate.linux-amd64 ./migrate
-    		    export PATH="./:$PATH"
+		    mv migrate.linux-amd64 ~/bin/migrate
+    		    export PATH="~/bin:$PATH"
 	            which migrate
 		'''
 	    }
@@ -23,7 +23,7 @@ pipeline {
 		sh '''
 		    cd auth
 		    export DB_SOURCE=postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable
-    		    export PATH="./:$PATH"
+    		    export PATH="~/bin:$PATH"
 		    make migrateup
 		'''
 	    }
@@ -33,7 +33,7 @@ pipeline {
 		sh '''
 		    cd auth
 		    export DB_SOURCE=postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable
-    		    export PATH="./:$PATH"
+    		    export PATH="~/bin:$PATH"
 		    make test
 		'''
 	    }
