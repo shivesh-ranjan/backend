@@ -5,6 +5,9 @@ pipeline {
 	    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
 	}
     }
+    environment {
+	DB_SOURCE = "postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable"	
+    }
     stages {
         stage('Setup DB') {
 	    steps {
