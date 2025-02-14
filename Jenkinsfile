@@ -13,7 +13,7 @@ pipeline {
 	    steps {
 	        sh '''
 		    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.12.2/migrate.linux-amd64.tar.gz | tar xvz
-		    sudo mv migrate.linux-amd64 /usr/bin/migrate
+		    mv migrate.linux-amd64 /usr/bin/migrate
 	            which migrate
 		'''
 	    }
