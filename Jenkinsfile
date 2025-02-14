@@ -5,7 +5,7 @@ pipeline {
         stage('Setup DB') {
 	    steps {
 	        sh '''
-		    docker run -d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret postgres:17.2
+		    sudo docker run -d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret postgres:17.2
 		'''
 	    }
 	}
