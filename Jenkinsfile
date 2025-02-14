@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-	    image 'derekshaw/golang_with_docker:1.0'
-	    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-	}
-    }
+    agents any
     stages {
         stage('Setup DB') {
 	    steps {
@@ -17,7 +12,8 @@ pipeline {
 	    steps {
 	        sh '''
 		    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.12.2/migrate.linux-amd64.tar.gz | tar xvz
-		    mv migrate.linux-amd64 /usr/bin/migrate
+		    mv migrate.linux-amd64 ./migrate
+    		    export PATH="./:$PATH"
 	            which migrate
 		'''
 	    }
