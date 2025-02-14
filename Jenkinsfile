@@ -23,6 +23,7 @@ pipeline {
 		sh '''
 		    cd auth
 		    export DB_SOURCE=postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable
+    		    export PATH="./:$PATH"
 		    make migrateup
 		'''
 	    }
@@ -32,6 +33,7 @@ pipeline {
 		sh '''
 		    cd auth
 		    export DB_SOURCE=postgresql://postgres:secret@host.docker.internal:5432/auth?sslmode=disable
+    		    export PATH="./:$PATH"
 		    make test
 		'''
 	    }
