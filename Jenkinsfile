@@ -1,5 +1,6 @@
 pipeline {
     agent any
+    tools { go"go1.23.4" }
     stages {
         stage('Setup DB') {
 	    steps {
