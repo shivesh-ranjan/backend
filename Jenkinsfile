@@ -14,7 +14,7 @@ pipeline {
 		    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.12.2/migrate.linux-amd64.tar.gz | tar xvz
 		    mkdir ~/bin
 		    mv migrate.linux-amd64 ~/bin/migrate
-    		    export PATH="~/bin:$PATH"
+    		    export PATH="/var/lib/jenkins/bin:$PATH"
 	            which migrate
 		'''
 	    }
