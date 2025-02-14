@@ -1,6 +1,10 @@
 pipeline {
-    agent any
-    tools { go 'go1.23.4' }
+    agent {
+        docker {
+	    image 'derekshaw/golang_with_docker:1.0'
+	    args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
+	}
+    }
     stages {
         stage('Setup DB') {
 	    steps {
