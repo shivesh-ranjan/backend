@@ -6,7 +6,7 @@ pipeline {
 	    steps {
 		script {
 		    img = 'postgres:17.2'
-		    docker.image("${img}").run("-d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret")
+		    docker.image("${img}").run("-d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret --name postgres")
 	    	}
 	    }
 	}
@@ -35,13 +35,13 @@ pipeline {
 		'''
 	    }
 	}
-	//stage('Cleaning Up') {
-	//    steps {
-	//	sh '''
-	//	    docker stop postgres
-	//	    docker rm postgres
-	//	'''
-	//    }
-	//}
+	stage('Cleaning Up') {
+	    steps {
+		sh '''
+		    docker stop postgres
+		    docker rm postgres
+		'''
+	    }
+	}
     }
 }
