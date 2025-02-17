@@ -4,8 +4,10 @@ pipeline {
     stages {
         stage('Setup DB') {
 	    steps {
-		img = 'postgres:17.2'
-		docker.image("${img}").run("-d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret")
+		script {
+		    img = 'postgres:17.2'
+		    docker.image("${img}").run("-d -p 5432:5432 -e POSTGRES_DB=auth -e POSTGRES_PASSWORD=secret")
+	    	}
 	    }
 	}
         stage('Install golang-migrate') {
