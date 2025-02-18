@@ -72,17 +72,19 @@ pipeline {
 	}
 	stage('Update and Commit Image Tag for ArgoCD') {
 	    steps {
-		withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_PASSWORD')]) {
-		    sh '''
-			git config --global user.name "${GITHUB_USERNAME}"
-			git config --global user.password "${GITHUB_PASSWORD}"
-		        git clone git@github.com:shivesh-ranjan/backend-ops.git
-		        git checkout main
-		        sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
-		        git add app-services.yml
-		        git commit -m "updated docker image"
-		        git push https://${GITHUB_PASSWORD}@github.com/shivesh-ranjan/backend-ops.git HEAD:main
-		    '''
+		script {
+		    git branch: 'main', changelog: false, credentialsId: 'github', poll: false, url: 'https://github.com/shivesh-ranjan/backend-ops.git'
+		    withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_PASSWORD')]) {
+		        sh '''
+			    git config --global user.name "${GITHUB_USERNAME}"
+			    git config --global user.password "${GITHUB_PASSWORD}"
+		            git checkout main
+		            sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
+		            git add app-services.yml
+		            git commit -m "updated docker image"
+		            git push https://${GITHUB_PASSWORD}@github.com/shivesh-ranjan/backend-ops.git HEAD:main
+		        '''
+		    }
 		}
 	    }
 	}
