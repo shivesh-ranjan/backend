@@ -76,12 +76,12 @@ pipeline {
 		    sh '''
 			git config --global user.name "${GITHUB_USERNAME}"
 			git config --global user.password "${GITHUB_PASSWORD}"
-		        git clone https://github.com/shivesh-ranjan/backend-ops.git
+		        git clone git@github.com:shivesh-ranjan/backend-ops.git
 		        git checkout main
 		        sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
 		        git add app-services.yml
 		        git commit -m "updated docker image"
-		        git push https://${GITHUB_TOKEN}@github.com/shivesh-ranjan/backend-ops.git HEAD:main
+		        git push https://${GITHUB_PASSWORD}@github.com/shivesh-ranjan/backend-ops.git HEAD:main
 		    '''
 		}
 	    }
