@@ -54,5 +54,22 @@ pipeline {
                 }
             }
         }
+	//stage('Building Docker Image'){
+	//    steps {
+	//	sh '''
+	//	    docker build -t derekshaw/gatewaymicro:${GIT_COMMIT} ./auth/Dockerfile
+	//	    docker push derekshaw/gatewaymicro:${GIT_COMMIT}
+	//	'''
+	//    }
+	//}
+	stage('Publish Image to Dockerhub') {
+	    steps {
+		script {
+		    withDockerRegistry(credentialsId: 'docker-hub-credentials', toolName: 'docker') {
+			sh 'docker push derekshaw/gatewaymicro:$GIT_COMMIT'
+		    }
+		}
+	    }
+	}
     }
 }
