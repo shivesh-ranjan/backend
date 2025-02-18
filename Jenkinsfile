@@ -3,10 +3,6 @@ pipeline {
     tools { 
 	go"go1.23.4"
     }
-	//   environment {
-	//SONARQUBE_URL = 'http://45.198.13.210:9000'
-	//SONARQUBE_PROJECT_KEY = 'backend'
-	//   }
     stages {
         stage('Setup DB') {
 	    steps {
@@ -48,19 +44,6 @@ pipeline {
 		'''
 	    }
 	}
-	//stage('SonarQube Analysis') {
-	//    steps {
-	//	withCredentials([string(credentialsId: 'sonarqube', variable: 'SONARQUBE_TOKEN')]) {
-	//	    sh '''
-	//                       /opt/sonar-scanner/bin/sonar-scanner \
-	//                         -Dsonar.projectKey=$SONARQUBE_PROJECT_KEY \
-	//                         -Dsonar.sources=. \
-	//                         -Dsonar.host.url=$SONARQUBE_URL \
-	//                         -Dsonar.login=${SONARQUBE_TOKEN}
-	//                   '''
-	//	}
-	//    }
-	//}
 	stage('SonarQube Analysis') {
             steps {
                 script {
