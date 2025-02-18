@@ -54,14 +54,13 @@ pipeline {
                 }
             }
         }
-	//stage('Building Docker Image'){
-	//    steps {
-	//	sh '''
-	//	    docker build -t derekshaw/gatewaymicro:${GIT_COMMIT} ./auth/Dockerfile
-	//	    docker push derekshaw/gatewaymicro:${GIT_COMMIT}
-	//	'''
-	//    }
-	//}
+	stage('Building Docker Image'){
+	    steps {
+		sh '''
+		    docker build -t derekshaw/gatewaymicro:${GIT_COMMIT} ./auth/Dockerfile
+		'''
+	    }
+	}
 	stage('Publish Image to Dockerhub') {
 	    steps {
 		script {
