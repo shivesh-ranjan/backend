@@ -1,6 +1,9 @@
 pipeline {
     agent any
-    tools { go"go1.23.4" }
+    tools { 
+	go"go1.23.4"
+	scannerHome"sonarqube"
+    }
     stages {
         stage('Setup DB') {
 	    steps {
@@ -43,7 +46,6 @@ pipeline {
 	    }
 	}
 	stage('SonarQube Analysis') {
-	    def scannerHome = tool 'sonarqube';
 	    steps {
 		withSonarQubeEnv(installationName: 'sonarqube', credentialsId: 'sonarqube'){
 		    sh "${scannerHome}/bin/sonar-scanner"
