@@ -57,7 +57,7 @@ pipeline {
 	stage('Building Docker Image'){
 	    steps {
 		sh '''
-		    docker build -t derekshaw/gatewaymicro:${GIT_COMMIT} ./auth/Dockerfile
+		    docker build -t derekshaw/gatewaymicro:${GIT_COMMIT} ./auth/
 		'''
 	    }
 	}
