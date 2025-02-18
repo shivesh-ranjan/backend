@@ -73,12 +73,14 @@ pipeline {
 	stage('Update and Commit Image Tag for ArgoCD') {
 	    steps {
 		withCredentials([string(credentialsId: 'github_token', variable: 'GITHUB_TOKEN')]) {
-		    sh 'git clone -b main https://github.com/shivesh-ranjan/backend-ops.git'
 		    sh '''
+			git config user.name "shivesh-ranjan"
+			git config user.email "ranjanshivesh71@gmail.com"
+		        git clone https://github.com/shivesh-ranjan/backend-ops.git
 		        git checkout main
 		        sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
 		        git add app-services.yml
-		        git commit -am "updated docker image"
+		        git commit -m "updated docker image"
 		        git push https://${GITHUB_TOKEN}@github.com/shivesh-ranjan/backend-ops.git HEAD:main
 		    '''
 		}
