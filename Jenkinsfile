@@ -70,5 +70,16 @@ pipeline {
 		}
 	    }
 	}
+	stage('Update and Commit Image Tag for ArgoCD') {
+	    steps {
+		sh 'git clone -b main https://github.com/shivesh-ranjan/backend-ops.git'
+		sh '''
+		    git checkout main
+		    sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
+		    git commit -am "updated docker image"
+		    git push -u origin main
+		'''
+	    }
+	}
     }
 }
