@@ -72,10 +72,10 @@ pipeline {
 	}
 	stage('Update and Commit Image Tag for ArgoCD') {
 	    steps {
-		withCredentials([string(credentialsId: 'github_token', variable: 'GITHUB_TOKEN')]) {
+		withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_PASSWORD')]) {
 		    sh '''
-			git config user.name "shivesh-ranjan"
-			git config user.email "ranjanshivesh71@gmail.com"
+			git config --global user.name "${GITHUB_USERNAME}"
+			git config --global user.password "${GITHUB_PASSWORD}"
 		        git clone https://github.com/shivesh-ranjan/backend-ops.git
 		        git checkout main
 		        sed -i "s#derekshaw/gatewaymicro.*#derekshaw/gatewaymicro:$GIT_COMMIT#g" app-services.yml
