@@ -81,7 +81,7 @@ func (server *Server) Start(address string) error {
 }
 
 func errorResponse(err error) gin.H {
-	return gin.H{"error": err.Error()}
+	return gin.H{"error EDIT": err.Error()}
 }
 
 func CORSMiddleware() gin.HandlerFunc {
